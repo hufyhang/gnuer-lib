@@ -24,11 +24,12 @@ extern void getFiles(const char *extension, const char *root)
 {
 	DIR *dir;
 	struct dirent *ptr;
-	char path[FILE_NAME_MAX], current_file[FILE_NAME_MAX], *current_ext;
+	char path[FILE_NAME_MAX], *current_ext;
 
 	if((dir = opendir(root)) == NULL)
 	{
 		perror("Fail to open dir.");
+		printf("%s\n", root);
 		exit(EXIT_FAILURE);
 	}
 
@@ -41,18 +42,30 @@ extern void getFiles(const char *extension, const char *root)
 
 		if(ptr->d_type == DT_DIR)
 		{
-			sprintf(path, "%s/%s", root, ptr->d_name);
-			getFiles(extension, path);
+			if(subDir == TRUE)
+			{
+				sprintf(path, "%s/%s", root, ptr->d_name);
+				getFiles(extension, path);
+			}
+			else
+			{
+				continue;
+			}
 		}
 		else if(ptr->d_type == DT_REG)
 		{
-			if((current_ext = rindex(ptr->d_name, '.')) == NULL)
-				continue;
-			if(strcmp(current_ext, extension) == 0)
+			if(all_flag == FALSE)
 			{
-				sprintf(current_file, "%s/%s", root, ptr->d_name);
-				printf("UPDATING %d: [%s]\n", counter + 1, current_file);
-				process(current_file, license);
+				if((current_ext = rindex(ptr->d_name, '.')) == NULL)
+					continue;
+				if(strcmp(current_ext, extension) == 0)
+				{
+					beginProcess(root, ptr->d_name);
+				}
+			}
+			else
+			{
+				beginProcess(root, ptr->d_name);
 			}
 		}
 	}
@@ -66,10 +79,19 @@ extern void getFiles(const char *extension, const char *root)
 	closedir(dir);
 }
 
+extern void beginProcess(const char *root, const char *file)
+{
+	char current_file[FILE_NAME_MAX];
+	sprintf(current_file, "%s/%s", root, file);
+	printf("UPDATING %d: [%s]\n", counter + 1, current_file);
+	process(current_file, license);
+}
+
 extern void process(const char *file, const char *licContents)
 {
 	FILE *fptr;
 	char *fileContents = malloc(BUF_SIZE * sizeof(char));
+	bzero(fileContents, BUF_SIZE);
 	if(getFileContents(fileContents, file) == -1)
 	{
 		perror("Fail to read contents.");
@@ -77,6 +99,7 @@ extern void process(const char *file, const char *licContents)
 	}
 
 	char *contents = malloc(BUF_SIZE * sizeof(char));
+	bzero(contents, BUF_SIZE);
 	if(remove(file) ==  -1)
 	{
 		perror("Fail to remove file.");
@@ -100,6 +123,7 @@ extern int getFileContents(char *string, const char* path)
 {
 	FILE *fptr;
 	char buf[BUF_SIZE];
+	bzero(buf, BUF_SIZE);
 
 	if((fptr = fopen(path, "r")) == NULL)
 	{
@@ -122,18 +146,43 @@ extern int getFileContents(char *string, const char* path)
 
 int main(int argc, char *argv[])
 {
+	int index = 4;
+	char *ext = malloc(126 * sizeof(char));
 	if(argc < 4)
 	{
-		printf("Usage: lics <copyright info> <extension> <root>\n");
+		printf("lics is part of the GNUer Library.\nCopyright (C) 2009, 2010 HANG Feifei.\n");
+		printf("Usage: lics [subfolders? sub/non] [Copyright Info] [Root] ([Extension])\n");
 		exit(EXIT_FAILURE);
 	}
+
+	if(strcmp(argv[1], "sub") == 0)
+	{
+		subDir = TRUE;
+	}
+	else
+	{
+		subDir = FALSE;
+	}
+
+	if(argc < 5)
+	{
+		all_flag = TRUE;
+	}
+
 	license = malloc(BUF_SIZE * sizeof(char));
-	if(getFileContents(license, argv[1]) == -1)
+	if(getFileContents(license, argv[2]) == -1)
 	{
 		perror("Fail to gether.");
 	}
-	getFiles(argv[2], argv[3]);
+
+	while(index < argc || all_flag == TRUE)
+	{
+		all_flag == TRUE ? ext = NULL : strcpy(ext, argv[index++]);
+		getFiles(ext, argv[3]);
+		all_flag = FALSE;
+	}
 	free(license);
+	free(ext);
 	printf("--- %d files have been updated ---\n", counter);
 	exit(EXIT_SUCCESS);
 }

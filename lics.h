@@ -30,12 +30,15 @@
 
 #define BUF_SIZE 10240000
 #define FILE_NAME_MAX 1024
+#define FALSE 0
+#define TRUE 1
 
-int counter = 0;
+int counter = 0, all_flag = FALSE, subDir = TRUE;
 char *license;
 
 extern void getFiles(const char*, const char*);
 extern int getFileContents(char*, const char*);
+extern void beginProcess(const char*, const char*);
 extern void process(const char*, const char*);
 
 #endif
