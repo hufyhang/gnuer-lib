@@ -83,12 +83,12 @@ extern void beginProcess(const char *root, const char *file)
 {
 	char current_file[FILE_NAME_MAX];
 	sprintf(current_file, "%s/%s", root, file);
-	printf("UPDATING %d: [%s]\n", counter + 1, current_file);
 	process(current_file, license);
 }
 
 extern void process(const char *file, const char *licContents)
 {
+	printf("UPDATING %d: [%s]\n", counter + 1, file);
 	FILE *fptr;
 	char *fileContents = malloc(BUF_SIZE * sizeof(char));
 	bzero(fileContents, BUF_SIZE);
@@ -152,6 +152,8 @@ int main(int argc, char *argv[])
 	{
 		printf("lics is part of the GNUer Library.\nCopyright (C) 2009, 2010 HANG Feifei.\n");
 		printf("Usage: lics [subfolders? sub/non] [Copyright Info] [Root] ([Extension])\n");
+		printf("Or\n");
+		printf("Usage: lics [specificed file? spe] [Copyright Info] [Path]\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -159,12 +161,16 @@ int main(int argc, char *argv[])
 	{
 		subDir = TRUE;
 	}
+	else if(strcmp(argv[1], "spe") == 0)
+	{
+		all_flag = TRUEX;
+	}
 	else
 	{
 		subDir = FALSE;
 	}
 
-	if(argc < 5)
+	if(argc < 5 && all_flag != TRUEX)
 	{
 		all_flag = TRUE;
 	}
@@ -175,10 +181,23 @@ int main(int argc, char *argv[])
 		perror("Fail to gether.");
 	}
 
-	while(index < argc || all_flag == TRUE)
+	BOOLEAN spe_changed = FALSE;
+	while(index < argc || all_flag == TRUE || all_flag == TRUEX)
 	{
-		all_flag == TRUE ? ext = NULL : strcpy(ext, argv[index++]);
-		getFiles(ext, argv[3]);
+		if(all_flag == TRUEX)
+		{
+			if(spe_changed == FALSE)
+			{
+				index = 3;
+				spe_changed = TRUE;
+			}
+			process(argv[index++], license);
+		}
+		else
+		{
+			all_flag == TRUE ? ext = NULL : strcpy(ext, argv[index++]);
+			getFiles(ext, argv[3]);
+		}
 		all_flag = FALSE;
 	}
 	free(license);
