@@ -32,6 +32,9 @@
 #define FILE_NAME_MAX 1024
 #define FALSE 0
 #define TRUE 1
+#define TRUEX -1
+
+typedef int BOOLEAN;
 
 int counter = 0, all_flag = FALSE, subDir = TRUE;
 char *license;
